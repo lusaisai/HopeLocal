@@ -40,8 +40,11 @@ def agent(path):
 
 
 def quote_url():
-    m = re.match(r'(https?://)(.*)', request.url)
-    return m.group(1) + urllib.quote(m.group(2).encode('utf-8'), safe='/?')
+    try:
+        return request.url.encode('ascii')
+    except UnicodeEncodeError:
+        m = re.match(r'(https?://)(.*)', request.url)
+        return m.group(1) + urllib.quote(m.group(2).encode('utf-8'), safe='/?')
 
 
 def setup_response_info(incoming, outgoing):
