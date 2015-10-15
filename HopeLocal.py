@@ -2,6 +2,8 @@ from flask import Flask, request, make_response
 import requests
 import settings
 import random
+import re
+import urllib
 
 
 app = Flask(__name__, static_url_path='/\x00\x00\x00\x00\x00\x00\x00\x00/')  # do not serve static
@@ -13,30 +15,33 @@ def setup_google_connection():
     connection.create_connection = create_google_connection
 
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
+@app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
+@app.route('/<path:path>', methods=['GET', 'POST'])
 def agent(path):
     if request.host.startswith('127.0.0.1'):
         return ''
 
     app_id = random.choice(settings.app_ids)
     headers = {key: value for key, value in request.headers.items() if len(value) > 0}
-    headers['target_url'] = request.url
+    headers['target_url'] = quote_url()
     headers["Host"] = app_id + ".appspot.com"
     cookies = dict(request.cookies)
 
     if settings.debug:
-        url = "http://localhost:9000/"
+        url = "http://localhost:9000/hope/"
     else:
-        url = "https://%s.appspot.com/" % app_id
+        url = "https://%s.appspot.com/hope/" % app_id
 
-    if request.method == "GET":
-        r = requests.get(url, headers=headers, cookies=cookies, allow_redirects=False)
-        response = make_response(r.content)
-        setup_response_info(r, response)
-        return response
-    else:
-        return ''
+    r = requests.request(method=request.method, url=url, data=request.form, headers=headers,
+                         cookies=cookies, allow_redirects=False)
+    response = make_response(r.content)
+    setup_response_info(r, response)
+    return response
+
+
+def quote_url():
+    m = re.match(r'(https?://)(.*)', request.url)
+    return m.group(1) + urllib.quote(m.group(2).encode('utf-8'), safe='/?')
 
 
 def setup_response_info(incoming, outgoing):
