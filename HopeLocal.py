@@ -2,7 +2,6 @@ from flask import Flask, request, make_response
 import requests
 import settings
 import random
-import re
 import urllib
 
 
@@ -43,8 +42,14 @@ def quote_url():
     try:
         return request.url.encode('ascii')
     except UnicodeEncodeError:
-        m = re.match(r'(https?://)(.*)', request.url)
-        return m.group(1) + urllib.quote(m.group(2).encode('utf-8'), safe='/?')
+        url_chars = []
+        for char in request.url:
+            try:
+                url_chars.append(char.encode('ascii'))
+            except UnicodeEncodeError:
+                url_chars.append(urllib.quote(char.encode('utf-8')))
+
+        return ''.join(url_chars)
 
 
 def setup_response_info(incoming, outgoing):
