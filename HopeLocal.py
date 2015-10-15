@@ -57,7 +57,10 @@ def setup_response_info(incoming, outgoing):
     headers_to_delete = {'transfer-encoding'}
     for header in incoming.headers:
         if header not in headers_to_keep and header not in headers_to_delete:
-            outgoing.headers[header] = incoming.headers[header]
+            if header.startswith('set-cookie-'):
+                outgoing.headers.add('set-cookie', incoming.headers[header])
+            else:
+                outgoing.headers[header] = incoming.headers[header]
 
     outgoing.status_code = incoming.status_code
 
