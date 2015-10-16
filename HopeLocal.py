@@ -38,6 +38,12 @@ def agent(path):
     return response
 
 
+@app.errorhandler(405)
+def log_error(error):
+    app.logger.error(request.url)
+    return '', error.code
+
+
 def quote_url():
     try:
         return request.url.encode('ascii')
