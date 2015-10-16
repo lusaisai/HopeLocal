@@ -17,8 +17,8 @@ def setup_google_connection():
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST'])
 @app.route('/<path:path>', methods=['GET', 'POST'])
 def agent(path):
-    if request.host.startswith('127.0.0.1'):
-        return ''
+    if request.host.startswith('127.0.0.1') or request.host.startswith('localhost'):
+        return 'Hope app server'
 
     app_id = random.choice(settings.app_ids)
     headers = {key: value for key, value in request.headers.items() if len(value) > 0}
@@ -60,13 +60,16 @@ def quote_url():
 
 def setup_response_info(incoming, outgoing):
     headers_to_keep = {'content-encoding', 'content-length'}
-    headers_to_delete = {'transfer-encoding'}
+    headers_to_delete = {'transfer-encoding', 'connection'}
     for header in incoming.headers:
-        if header not in headers_to_keep and header not in headers_to_delete:
+        if header not in headers_to_keep:
             if header.startswith('set-cookie-'):
                 outgoing.headers.add('set-cookie', incoming.headers[header])
             else:
                 outgoing.headers[header] = incoming.headers[header]
+
+        if header in headers_to_delete:
+            del outgoing.headers[header]
 
     outgoing.status_code = incoming.status_code
 

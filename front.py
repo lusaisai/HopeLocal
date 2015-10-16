@@ -2,12 +2,26 @@ import socket
 import threading
 import SocketServer
 import settings
+import re
 
 
 class HopeRequestHandler(SocketServer.BaseRequestHandler):
     def handle(self):
-        s = socket.socket()
-        s.connect(settings.app_server)
+        # check https
+        data = self.request.recv(2**5)
+        method, other = re.split(r'\s+', data, maxsplit=1)
+        if method == 'CONNECT':
+            self.request.recv(4096)
+            self.request.send('HTTP/1.1 200 OK\r\n')
+            self.request.send('Content-Length: 0\r\n')
+            self.request.send('\r\n')
+            s = socket.socket()
+            s.connect(settings.https_server)
+        else:
+            s = socket.socket()
+            s.connect(settings.app_server)
+            s.sendall(data)
+
         t1 = HopeTunnel(self.request, s)
         t1.start()
         t2 = HopeTunnel(s, self.request)
