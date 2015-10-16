@@ -72,7 +72,6 @@ def setup_response_info(incoming, outgoing):
 
 
 if __name__ == '__main__':
-    app.debug = settings.debug
     if not settings.debug:
         setup_google_connection()
-    app.run()
+    app.run(debug=settings.debug, port=settings.app_server[1])
