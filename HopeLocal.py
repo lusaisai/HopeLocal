@@ -21,7 +21,7 @@ def agent(path):
         return 'Hope app server'
 
     app_id = random.choice(settings.app_ids)
-    headers = {key: value for key, value in request.headers.items() if len(value) > 0 and key.lower() != 'hope-scheme'}
+    headers = {key: value for key, value in request.headers.items() if len(value) > 0}
     headers['target_url'] = quote_url()
     headers["Host"] = app_id + ".appspot.com"
     cookies = dict(request.cookies)
@@ -45,7 +45,7 @@ def log_error(error):
 
 
 def quote_url():
-    if "hope-scheme" in request.headers and request.headers["hope-scheme"] == 'https':
+    if app.config["SCHEME"] == 'https':
         url = request.url.replace("http", "https")
     else:
         url = request.url

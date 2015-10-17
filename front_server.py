@@ -9,8 +9,13 @@ class HopeRequestHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         # check https
         data = self.request.recv(4096)
-        method, url, others = re.split(r'\s+', data, maxsplit=2)
-        domain, port = re.split(r':', url, maxsplit=2)
+        try:
+            method, url, others = re.split(r'\s+', data, maxsplit=2)
+            domain, port = re.split(r':', url, maxsplit=2)
+        except ValueError:
+            method = None
+            domain = None
+
         if method == 'CONNECT':
             self.request.send('HTTP/1.1 200 OK\r\n')
             self.request.send('Content-Length: 0\r\n')
@@ -23,7 +28,7 @@ class HopeRequestHandler(SocketServer.BaseRequestHandler):
                 s.sendall("%s%s" % (str(len(domain)).zfill(4), domain))
         else:
             s = socket.socket()
-            s.connect(settings.app_server_address)
+            s.connect(settings.app_http_server_address)
             s.sendall(data)
 
         HopeTunnel.tunnelling(self.request, s)

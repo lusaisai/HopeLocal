@@ -15,13 +15,7 @@ class HopeHttpsRequestHandler(SocketServer.BaseRequestHandler):
         setup_certs(domain)
         ssl_request = ssl.wrap_socket(self.request, certfile=cert_file, keyfile=cert_file, server_side=True)
         s = socket.socket()
-        s.connect(settings.app_server_address)
-
-        # tell app server this is a https request
-        data = ssl_request.recv(4096)
-        index = data.find('\r\n') + 2
-        s.sendall(data[:index] + "hope-scheme: https\r\n" + data[index:])
-
+        s.connect(settings.app_https_server_address)
         HopeTunnel.tunnelling(ssl_request, s)
 
 
