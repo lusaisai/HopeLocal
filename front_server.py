@@ -11,10 +11,10 @@ class HopeRequestHandler(SocketServer.BaseRequestHandler):
         data = self.request.recv(4096)
         try:
             method, url, others = re.split(r'\s+', data, maxsplit=2)
-            domain, port = re.split(r':', url, maxsplit=2)
+            domain, port = re.split(r':', url, maxsplit=1)
         except ValueError:
-            method = None
-            domain = None
+            method = ''
+            domain = ''
 
         if method == 'CONNECT':
             self.request.send('HTTP/1.1 200 OK\r\n')
