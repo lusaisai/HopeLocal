@@ -11,4 +11,4 @@ file_handler = RotatingFileHandler(os.path.join(APP_DIR, 'log.txt'), maxBytes=10
 file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s'))
 app.logger.addHandler(file_handler)
 setup_google_connection()
-serve(app, host=settings.app_server[0], port=settings.app_server[1])
+serve(app, host=settings.app_server_address[0], port=settings.app_server_address[1])

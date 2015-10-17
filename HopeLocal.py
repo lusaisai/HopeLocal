@@ -21,7 +21,7 @@ def agent(path):
         return 'Hope app server'
 
     app_id = random.choice(settings.app_ids)
-    headers = {key: value for key, value in request.headers.items() if len(value) > 0}
+    headers = {key: value for key, value in request.headers.items() if len(value) > 0 and key.lower() != 'hope-scheme'}
     headers['target_url'] = quote_url()
     headers["Host"] = app_id + ".appspot.com"
     cookies = dict(request.cookies)
@@ -45,11 +45,16 @@ def log_error(error):
 
 
 def quote_url():
+    if "hope-scheme" in request.headers and request.headers["hope-scheme"] == 'https':
+        url = request.url.replace("http", "https")
+    else:
+        url = request.url
+
     try:
-        return request.url.encode('ascii')
+        return url.encode('ascii')
     except UnicodeEncodeError:
         url_chars = []
-        for char in request.url:
+        for char in url:
             try:
                 url_chars.append(char.encode('ascii'))
             except UnicodeEncodeError:
@@ -77,4 +82,4 @@ def setup_response_info(incoming, outgoing):
 if __name__ == '__main__':
     if not settings.debug:
         setup_google_connection()
-    app.run(debug=settings.debug, port=settings.app_server[1])
+    app.run(debug=settings.debug, port=settings.app_server_address[1])
