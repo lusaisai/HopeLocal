@@ -1,5 +1,10 @@
 @echo off
-start "HopeLocal" /D "C:\projects\HopeLocal" "C:\Python27\pythonw.exe" front_server.py
-start "HopeLocal" /D "C:\projects\HopeLocal" "C:\Python27\pythonw.exe" https_server.py
-start "HopeLocal" /D "C:\projects\HopeLocal" "C:\Python27\pythonw.exe" app_http_server.py
-start "HopeLocal" /D "C:\projects\HopeLocal" "C:\Python27\pythonw.exe" app_https_server.py
+
+set title="HopeLocal"
+set dir="C:\projects\HopeLocal"
+set pythonw="C:\Python27\pythonw.exe"
+
+start %title% /D %dir% %pythonw% front_server.py
+start %title% /D %dir% %pythonw% https_server.py
+start %title% /D %dir% %pythonw% app_http_server.py
+start %title% /D %dir% %pythonw% app_https_server.py

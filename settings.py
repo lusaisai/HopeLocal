@@ -1,7 +1,7 @@
 import os
 
 
-app_ids = ["gae0x0006"]
+app_ids = ["gae0x0000", "gae0x0001", "gae0x0002", "gae0x0003", "gae0x0004", "gae0x0005", "gae0x0006"]
 google_ip = "59.18.45.59"
 debug = False
 front_server_address = ('127.0.0.1', 5000)
