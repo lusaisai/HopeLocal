@@ -24,3 +24,7 @@ def create_google_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
             raise err
         else:
             raise socket.error("getaddrinfo returns an empty list")
+
+
+def setup_google_connection():
+    connection.create_connection = create_google_connection

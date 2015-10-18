@@ -46,15 +46,31 @@ class HopeTunnel(threading.Thread):
     def __init__(self, incoming, outgoing):
         super(HopeTunnel, self).__init__()
         self.incoming = incoming
+        self.incoming.settimeout(settings.timeout)
         self.outgoing = outgoing
+        self.outgoing.settimeout(settings.timeout)
+        self.logger = settings.logger
 
     def run(self):
         while True:
-            data = self.incoming.recv(4096)
-            if len(data) == 0:
+            try:
+                data = self.incoming.recv(4096)
+                if len(data) == 0:
+                    self.close()
+                    break
+                else:
+                    self.outgoing.sendall(data)
+                    # self.logger.info("%s:%s --> %s: %s" % (threading.currentThread().getName(),
+                    # self.incoming.getsockname(), self.outgoing.getsockname(), data))
+            except socket.error as err:
+                # self.logger.info("%s:%s --> %s: %s" % (threading.currentThread().getName(),
+                # self.incoming.getsockname(), self.outgoing.getsockname(), err))
+                self.close()
                 break
-            else:
-                self.outgoing.sendall(data)
+
+    def close(self):
+        self.incoming.close()
+        self.outgoing.close()
 
     @classmethod
     def tunnelling(cls, s1, s2):
