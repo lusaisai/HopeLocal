@@ -6,7 +6,7 @@ import logging
 app_ids = ["app_id1", "app_id2"]
 google_ip = "59.18.45.59"
 
-debug = False
+using_dev_app_engine = False
 
 front_server_address = ('127.0.0.1', 5000)
 https_server_address = ('127.0.0.1', 5100)

@@ -50,7 +50,7 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
         headers['target_url'] = target_url
         headers["host"] = app_id + ".appspot.com"
 
-        if settings.debug:
+        if settings.using_dev_app_engine:
             url = "http://localhost:9000/hope/"
         else:
             url = "https://%s.appspot.com/hope/" % app_id
