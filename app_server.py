@@ -41,20 +41,8 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write("Hope app server")
             return None
 
-        app_id = self.get_app_id()
         headers = {key: value for key, value in self.headers.items()}
-        if self.TARGET_SCHEME == 'http':
-            target_url = self.path.replace("http", self.TARGET_SCHEME)
-        else:
-            target_url = "https://" + host + self.path
-        headers['target_url'] = target_url
-        headers["host"] = app_id + ".appspot.com"
-
-        if settings.using_dev_app_engine:
-            url = "http://localhost:9000/hope/"
-        else:
-            url = "https://%s.appspot.com/hope/" % app_id
-            setup_google_connection()
+        url = self.setup_google_headers(headers)
 
         if 'content-length' in self.headers:
             body = self.rfile.read(int(self.headers['content-length']))
@@ -66,12 +54,13 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             size = int(r.headers['Source-Content-Length']) if 'Source-Content-Length' in r.headers else 0
             if str(r.status_code).startswith('2') and size > settings.range_required_size:
                 if "range" in headers:
-                    range_bytes = headers["range"].split('=')
-                    start, target = range_bytes[1].split('-')[0]
+                    range_bytes = headers["range"].split('=')[1].split('-')
+                    start = int(range_bytes[0])
+                    target = int(range_bytes[1]) if range_bytes[1] else start + size - 1
                 else:
                     start = 0
                     target = size - 1
-                self.make_range_requests(url, headers, start, target)
+                self.make_range_requests(headers, start, target)
             else:
                 self.make_normal_requests(method, url, body, headers)
 
@@ -79,6 +68,25 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             self.make_normal_requests(method, url, body, headers)
 
         return None
+
+    def setup_google_headers(self, headers):
+        host = self.headers['host']
+        app_id = self.get_app_id()
+        if self.TARGET_SCHEME == 'http':
+            target_url = self.path.replace("http", self.TARGET_SCHEME)
+        else:
+            target_url = "https://" + host + self.path
+
+        headers['target_url'] = target_url
+        headers["host"] = app_id + ".appspot.com"
+
+        if settings.using_dev_app_engine:
+            url = "http://localhost:9000/hope/"
+        else:
+            url = "https://%s.appspot.com/hope/" % app_id
+            setup_google_connection()
+
+        return url
 
     def get_app_id(self):
         for key, value in settings.domain_use_specific_app.items():
@@ -98,8 +106,9 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
         self.send_common_headers(r)
         self.wfile.write(r.content)
 
-    def make_range_requests(self, url, headers, start, target):
+    def make_range_requests(self, headers, start, target):
         first_request = True
+        is_original_range_request = True if 'range' in headers else False
         while start < target:
             if start + settings.range_split_size - 1 <= target:
                 range_bytes = "bytes=%s-%s" % (start, start + settings.range_split_size - 1)
@@ -107,12 +116,17 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
                 range_bytes = "bytes=%s-%s" % (start, target)
 
             headers['range'] = range_bytes
+            headers.pop('if_modified_since', None)
 
             for i in range(3):
+                url = self.setup_google_headers(headers)  # reset google app to avoid OverQuotaError
                 r = requests.get(url=url, headers=headers, allow_redirects=False)
                 if r.status_code == 206:
                     if first_request:
-                        self.send_response(200)
+                        if is_original_range_request:
+                            self.send_response(206)
+                        else:
+                            self.send_response(200)
                         self.pass_headers(r, ignore={'content-range'})
                         self.send_header('content-length', target - start + 1)
                         self.send_header('content-range', 'bytes %s-%s/*' % (start, target))
@@ -125,7 +139,7 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def guess_range_required(headers):
-        extensions = ["mp4", "m4v", "flv", "mp3", "ogg", "exe", "zip", "rar", "tar.gz"]
+        extensions = ["mp4", "webm", "m4v", "flv", "mp3", "ogg", "exe", "zip", "rar", "tar.gz"]
 
         url = headers['target_url']
         for extension in extensions:
