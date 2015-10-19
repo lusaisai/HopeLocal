@@ -7,14 +7,14 @@ cert_dir = os.path.join(settings.app_dir, 'certs')
 hope_ca_file = os.path.join(cert_dir, 'hopeca.crt')
 
 
-def setup_certs(domain):
+def setup_certs(domain=None):
     if not os.path.exists(cert_dir):
         os.mkdir(cert_dir)
 
     if not os.path.isfile(hope_ca_file):
         create_hope_ca()
 
-    if not os.path.isfile(get_domain_cert_file(domain)):
+    if domain and not os.path.isfile(get_domain_cert_file(domain)):
         create_domain_cert(domain)
 
 
@@ -48,7 +48,10 @@ def create_hope_ca():
             fp.write(OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, key))
 
 
-def create_domain_cert(domain):
+def create_domain_cert(domain=None):
+    if not domain:
+        return
+
     with open(hope_ca_file, 'rb') as fp:
         content = fp.read()
         key = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, content)

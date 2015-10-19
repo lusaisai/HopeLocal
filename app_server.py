@@ -3,10 +3,7 @@ from SocketServer import ThreadingMixIn
 import requests
 import settings
 import random
-import sys
 from google_connection import setup_google_connection
-
-TARGET_SCHEME = "http"
 
 
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
@@ -14,6 +11,8 @@ class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
 
 
 class HopeAppRequestHandler(BaseHTTPRequestHandler):
+    TARGET_SCHEME = None
+
     def do_GET(self):
         self.do("GET")
         return None
@@ -44,8 +43,8 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
 
         app_id = self.get_app_id()
         headers = {key: value for key, value in self.headers.items()}
-        if TARGET_SCHEME == 'http':
-            target_url = self.path.replace("http", TARGET_SCHEME)
+        if self.TARGET_SCHEME == 'http':
+            target_url = self.path.replace("http", self.TARGET_SCHEME)
         else:
             target_url = "https://" + host + self.path
         headers['target_url'] = target_url
@@ -149,20 +148,20 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
                 else:
                     self.send_header(header, response.headers[header])
 
+
+class HopeAppHttpRequestHandler(HopeAppRequestHandler):
+    TARGET_SCHEME = 'http'
+
+
+class HopeAppHttpsRequestHandler(HopeAppRequestHandler):
+    TARGET_SCHEME = 'https'
+
+
 if __name__ == '__main__':
     if not settings.debug:
         setup_google_connection()
 
-    if len(sys.argv) == 2:
-        scheme = sys.argv[1]
-        if scheme not in ['http', 'https']:
-            print("scheme should be either http or https")
-            sys.exit(1)
-        else:
-            TARGET_SCHEME = scheme
-
-    if TARGET_SCHEME == 'http':
-        server = ThreadingHTTPServer(settings.app_http_server_address, HopeAppRequestHandler)
-    else:
-        server = ThreadingHTTPServer(settings.app_https_server_address, HopeAppRequestHandler)
-    server.serve_forever()
+    app_http_server = ThreadingHTTPServer(settings.app_http_server_address, HopeAppHttpRequestHandler)
+    app_https_server = ThreadingHTTPServer(settings.app_https_server_address, HopeAppHttpsRequestHandler)
+    app_http_server.serve_forever()
+    # app_https_server.serve_forever()
