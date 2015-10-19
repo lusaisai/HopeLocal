@@ -35,5 +35,8 @@ if __name__ == '__main__':
         Process(target=run_app_http_server),
         Process(target=run_app_https_server)
     ]
+
     for process in processes:
         process.start()
+    for process in processes:
+        process.join()

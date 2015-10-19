@@ -54,6 +54,7 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             url = "http://localhost:9000/hope/"
         else:
             url = "https://%s.appspot.com/hope/" % app_id
+            setup_google_connection()
 
         if 'content-length' in self.headers:
             body = self.rfile.read(int(self.headers['content-length']))
@@ -158,9 +159,6 @@ class HopeAppHttpsRequestHandler(HopeAppRequestHandler):
 
 
 if __name__ == '__main__':
-    if not settings.debug:
-        setup_google_connection()
-
     app_http_server = ThreadingHTTPServer(settings.app_http_server_address, HopeAppHttpRequestHandler)
     app_https_server = ThreadingHTTPServer(settings.app_https_server_address, HopeAppHttpsRequestHandler)
     app_http_server.serve_forever()
