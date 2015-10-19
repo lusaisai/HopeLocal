@@ -46,9 +46,7 @@ class HopeTunnel(threading.Thread):
     def __init__(self, incoming, outgoing):
         super(HopeTunnel, self).__init__()
         self.incoming = incoming
-        self.incoming.settimeout(settings.timeout)
         self.outgoing = outgoing
-        self.outgoing.settimeout(settings.timeout)
         self.logger = settings.logger
 
     def run(self):
