@@ -13,6 +13,8 @@ https_server_address = ('127.0.0.1', 5100)
 app_http_server_address = ('127.0.0.1', 5200)
 app_https_server_address = ('127.0.0.1', 5300)
 
+timeout = 10
+
 range_required_size = 5 * (2 ** 20)
 range_split_size = 2 * (2 ** 20)
 

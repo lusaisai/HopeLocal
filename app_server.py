@@ -1,9 +1,11 @@
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 import requests
+from ca import setup_certs
 import settings
 import random
 from google_connection import setup_google_connection
+from threading import Thread
 
 
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
@@ -31,6 +33,10 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         self.do("POST")
+        return None
+
+    # It breaks when started without console, so make it silent.
+    def log_message(self, format, *args):
         return None
 
     def do(self, method):
@@ -102,40 +108,50 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def make_normal_requests(self, method, url, body, headers):
-        r = requests.request(method=method, url=url, data=body, headers=headers, allow_redirects=False)
-        self.send_common_headers(r)
-        self.wfile.write(r.content)
+        try:
+            r = requests.request(method=method, url=url, data=body, headers=headers,
+                                 allow_redirects=False, timeout=settings.timeout)
+            self.send_common_headers(r)
+            self.wfile.write(r.content)
+            self.wfile.close()
+        except requests.exceptions.RequestException:
+            self.wfile.close()
 
     def make_range_requests(self, headers, start, target):
-        first_request = True
-        is_original_range_request = True if 'range' in headers else False
-        while start < target:
-            if start + settings.range_split_size - 1 <= target:
-                range_bytes = "bytes=%s-%s" % (start, start + settings.range_split_size - 1)
-            else:
-                range_bytes = "bytes=%s-%s" % (start, target)
+        try:
+            first_request = True
+            is_original_range_request = True if 'range' in headers else False
+            while start < target:
+                if start + settings.range_split_size - 1 <= target:
+                    range_bytes = "bytes=%s-%s" % (start, start + settings.range_split_size - 1)
+                else:
+                    range_bytes = "bytes=%s-%s" % (start, target)
 
-            headers['range'] = range_bytes
-            headers.pop('if_modified_since', None)
+                headers['range'] = range_bytes
+                headers.pop('if_modified_since', None)
 
-            for i in range(3):
-                url = self.setup_google_headers(headers)  # reset google app to avoid OverQuotaError
-                r = requests.get(url=url, headers=headers, allow_redirects=False)
-                if r.status_code == 206:
-                    if first_request:
-                        if is_original_range_request:
-                            self.send_response(206)
-                        else:
-                            self.send_response(200)
-                        self.pass_headers(r, ignore={'content-range'})
-                        self.send_header('content-length', target - start + 1)
-                        self.send_header('content-range', 'bytes %s-%s/*' % (start, target))
-                        self.end_headers()
-                        first_request = False
-                    self.wfile.write(r.content)
-                    break
+                for i in range(3):
+                    url = self.setup_google_headers(headers)  # reset google app to avoid OverQuotaError
+                    r = requests.get(url=url, headers=headers, allow_redirects=False)
+                    if r.status_code == 206:
+                        if first_request:
+                            if is_original_range_request:
+                                self.send_response(206)
+                            else:
+                                self.send_response(200)
+                            self.pass_headers(r, ignore={'content-range'})
+                            self.send_header('content-length', target - start + 1)
+                            self.send_header('content-range', 'bytes %s-%s/*' % (start, target))
+                            self.end_headers()
+                            first_request = False
+                        self.wfile.write(r.content)
+                        break
 
-            start += settings.range_split_size
+                start += settings.range_split_size
+
+            self.wfile.close()
+        except requests.exceptions.RequestException:
+            self.wfile.close()
 
     @staticmethod
     def guess_range_required(headers):
@@ -173,7 +189,14 @@ class HopeAppHttpsRequestHandler(HopeAppRequestHandler):
 
 
 if __name__ == '__main__':
+    setup_certs()
     app_http_server = ThreadingHTTPServer(settings.app_http_server_address, HopeAppHttpRequestHandler)
     app_https_server = ThreadingHTTPServer(settings.app_https_server_address, HopeAppHttpsRequestHandler)
-    app_http_server.serve_forever()
-    # app_https_server.serve_forever()
+    threads = [
+        Thread(target=app_http_server.serve_forever),
+        Thread(target=app_https_server.serve_forever),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
