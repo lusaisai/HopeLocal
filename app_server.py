@@ -153,7 +153,6 @@ if __name__ == '__main__':
     if not settings.debug:
         setup_google_connection()
 
-    TARGET_SCHEME = "http"
     if len(sys.argv) == 2:
         scheme = sys.argv[1]
         if scheme not in ['http', 'https']:
