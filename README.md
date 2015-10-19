@@ -32,7 +32,7 @@ Front server listens on 127.0.0.1:5000 by default.
 3. Modify upload.cmd accordingly and run it.
 
 ## Settings
-Modify settings.py or create a user_settings.py to overrile default settings.
+Modify settings.py or create a user_settings.py to override default settings.
 
 ## Certificate Authority
 About https, Hope will create a file certs/hopeca.crt, install(import) it to your system(browser) so it can be trusted.
