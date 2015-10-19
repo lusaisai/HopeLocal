@@ -42,7 +42,7 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write("Hope app server")
             return None
 
-        app_id = random.choice(settings.app_ids)
+        app_id = self.get_app_id()
         headers = {key: value for key, value in self.headers.items()}
         if TARGET_SCHEME == 'http':
             target_url = self.path.replace("http", TARGET_SCHEME)
@@ -79,6 +79,13 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             self.make_normal_requests(method, url, body, headers)
 
         return None
+
+    def get_app_id(self):
+        for key, value in settings.domain_use_specific_app.items():
+            if key in self.headers['host']:
+                return value
+
+        return random.choice(settings.app_ids)
 
     def send_common_headers(self, response):
         self.send_response(response.status_code)

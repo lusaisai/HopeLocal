@@ -2,7 +2,8 @@ from logging.handlers import RotatingFileHandler
 import os
 import logging
 
-app_ids = ["gae0x0000", "gae0x0001", "gae0x0002", "gae0x0003", "gae0x0004", "gae0x0005", "gae0x0006"]
+
+app_ids = ["app_id1", "app_id2"]
 google_ip = "59.18.45.59"
 
 debug = False
@@ -28,3 +29,13 @@ google_domains = [
     "gmail.com", "blogspot.com", "googlelabs.com", "googleusercontent.com", "ggpht.com",
     "googleapis.com", "google-analytics.com"
     ]
+
+#  a website may break its session when a new request comes from a different app, this will fix it.
+domain_use_specific_app = {
+    "www.your_domain.com": "your_app_id"
+}
+
+try:
+    from user_settings import *
+except ImportError:
+    pass
