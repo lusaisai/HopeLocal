@@ -5,7 +5,7 @@ from ca import setup_certs
 import settings
 import random
 from google_connection import setup_google_connection
-from threading import Thread
+from multiprocessing import Process
 
 
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
@@ -36,8 +36,15 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
         return None
 
     # It breaks when started without console, so make it silent.
-    def log_message(self, format, *args):
-        return None
+    def log_message(self, message, *args):
+        if not settings.log_requests:
+            return
+        else:
+            try:
+                settings.logger.info(('"Host: %s" ' + message) % ((self.headers['host'],) + args))
+            except RuntimeError:
+                pass
+            return
 
     def do(self, method):
         host = self.headers['host']
@@ -188,15 +195,23 @@ class HopeAppHttpsRequestHandler(HopeAppRequestHandler):
     TARGET_SCHEME = 'https'
 
 
+def run_app_http_server():
+    server = ThreadingHTTPServer(settings.app_http_server_address, HopeAppHttpRequestHandler)
+    server.serve_forever()
+
+
+def run_app_https_server():
+    server = ThreadingHTTPServer(settings.app_https_server_address, HopeAppHttpsRequestHandler)
+    server.serve_forever()
+
 if __name__ == '__main__':
     setup_certs()
-    app_http_server = ThreadingHTTPServer(settings.app_http_server_address, HopeAppHttpRequestHandler)
-    app_https_server = ThreadingHTTPServer(settings.app_https_server_address, HopeAppHttpsRequestHandler)
-    threads = [
-        Thread(target=app_http_server.serve_forever),
-        Thread(target=app_https_server.serve_forever),
+    processes = [
+        Process(target=run_app_http_server),
+        Process(target=run_app_https_server)
     ]
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join()
+
+    for process in processes:
+        process.start()
+    for process in processes:
+        process.join()

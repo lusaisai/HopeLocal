@@ -19,6 +19,8 @@ range_required_size = 5 * (2 ** 20)
 range_split_size = 2 * (2 ** 20)
 
 app_dir = os.path.dirname(os.path.realpath(__file__))
+
+log_requests = False
 log_file = os.path.join(app_dir, 'log.txt')
 log_file_handler = RotatingFileHandler(log_file, maxBytes=2**20)
 logger = logging.getLogger('hope')
