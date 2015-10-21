@@ -27,7 +27,7 @@ def run_app_https_server():
     server.serve_forever()
 
 
-if __name__ == '__main__':
+def run_services():
     setup_certs()
     processes = [
         Process(target=run_front_server),
@@ -38,5 +38,8 @@ if __name__ == '__main__':
 
     for process in processes:
         process.start()
-    for process in processes:
-        process.join()
+
+    return processes
+
+if __name__ == '__main__':
+    run_services()

@@ -15,7 +15,7 @@ Here is an overview of the architecture
 #### Steps
 1. Download the repository.
 2. Install python dependencies, run **pip install -r requirements.txt** on command line. (Tip: On Windows, you can use shift+rightclick to open cmd from the explorer)
-3. Run **start_services.cmd** or **start_services.pyw** to start the services.
+3. Run **start_services.cmd** or **start_services.pyw** to start the services. See GUI below for alternative ways of starting the services.
 
 Front server listens on **127.0.0.1:5000** by default.
 
@@ -33,3 +33,9 @@ Modify **settings.py** or create a **user_settings.py** to override default sett
 
 ## Certificate Authority
 About https, Hope will create a file **certs/hopeca.crt**, install(import) it to your system(browser) so it can be trusted.
+
+## GUI
+### Windows
+#### Steps
+1. Install windows api dependency, run **pip install pypiwin32** on command line.
+2. Double click **win32gui_start.pyw** to start the services. A tray icon will be created where you can restart/exit.
