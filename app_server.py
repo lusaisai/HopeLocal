@@ -156,7 +156,7 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             total_requests = requests_left if size_left == 0 else requests_left + 1
             data_splits = [''] * total_requests
             threads = []
-            semaphore = Semaphore(settings.range_request_threads)
+            semaphore = Semaphore(settings.range_concurrent_requests)
             for index in range(total_requests):
                 range_bytes = "bytes=%s-%s" % (start, min(start + settings.range_split_size - 1, target))
                 headers_copy = dict(headers)

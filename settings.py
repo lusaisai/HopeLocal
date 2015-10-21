@@ -17,7 +17,7 @@ timeout = 10
 
 range_required_size = 5 * (2 ** 20)
 range_split_size = 2 ** 20
-range_request_threads = 10
+range_concurrent_requests = 10
 
 app_dir = os.path.dirname(os.path.realpath(__file__))
 
