@@ -73,7 +73,7 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
                 else:
                     start = 0
                     target = size - 1
-                self.make_range_requests(headers, start, target)
+                self.make_range_requests(headers, start, target, r)
             else:
                 self.make_normal_requests(method, url, body, headers)
 
@@ -124,7 +124,7 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
         except requests.exceptions.RequestException:
             self.wfile.close()
 
-    def make_range_requests(self, headers, start, target):
+    def make_range_requests(self, headers, start, target, head_response):
         try:
             first_request = True
             is_original_range_request = True if 'range' in headers else False
@@ -144,11 +144,12 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
                         if first_request:
                             if is_original_range_request:
                                 self.send_response(206)
+                                self.pass_headers(r, ignore={'content-range'})
+                                self.send_header('content-range', 'bytes %s-%s/*' % (start, target))
                             else:
                                 self.send_response(200)
-                            self.pass_headers(r, ignore={'content-range'})
+                                self.pass_headers(head_response)
                             self.send_header('content-length', target - start + 1)
-                            self.send_header('content-range', 'bytes %s-%s/*' % (start, target))
                             self.end_headers()
                             first_request = False
                         self.wfile.write(r.content)
