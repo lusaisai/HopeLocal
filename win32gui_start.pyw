@@ -1,9 +1,9 @@
 import win32api
 import win32gui
 import win32con
-import sys
 import os
 import start_services
+import settings
 
 
 class MainWindow:
@@ -34,17 +34,9 @@ class MainWindow:
 
     def create_icons(self):
         h_inst = win32api.GetModuleHandle(None)
-        icon_path_name = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "pyc.ico"))
-        if not os.path.isfile(icon_path_name):
-            icon_path_name = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "DLLs", "pyc.ico"))
-        if not os.path.isfile(icon_path_name):
-            icon_path_name = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "..\\PC\\pyc.ico"))
-        if os.path.isfile(icon_path_name):
-            icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
-            hicon = win32gui.LoadImage(h_inst, icon_path_name, win32con.IMAGE_ICON, 0, 0, icon_flags)
-        else:
-            hicon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)
-
+        icon_file = os.path.join(settings.app_dir, 'docs', 'hope.ico')
+        icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
+        hicon = win32gui.LoadImage(h_inst, icon_file, win32con.IMAGE_ICON, 0, 0, icon_flags)
         flags = win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP
         nid = (self.hwnd, 0, flags, win32con.WM_USER+20, hicon, "Hope")
         try:
