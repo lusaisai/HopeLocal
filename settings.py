@@ -21,11 +21,10 @@ range_request_threads = 10
 
 app_dir = os.path.dirname(os.path.realpath(__file__))
 
-log_requests = False
 log_file = os.path.join(app_dir, 'log.txt')
 log_file_handler = RotatingFileHandler(log_file, maxBytes=2**20)
 logger = logging.getLogger('hope')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 logger.addHandler(log_file_handler)
 
 google_domains = [

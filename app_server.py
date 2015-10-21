@@ -39,14 +39,11 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
 
     # It breaks when started without console, so make it silent.
     def log_message(self, message, *args):
-        if not settings.log_requests:
-            return
-        else:
-            try:
-                settings.logger.info(('"Host: %s" ' + message) % ((self.headers['host'],) + args))
-            except RuntimeError:
-                pass
-            return
+        try:
+            settings.logger.info(('"Host: %s" ' + message) % ((self.headers['host'],) + args))
+        except RuntimeError:
+            pass
+        return
 
     def do(self, method):
         host = self.headers['host']
