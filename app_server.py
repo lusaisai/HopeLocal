@@ -6,6 +6,8 @@ import settings
 import random
 from google_connection import setup_google_connection
 from multiprocessing import Process
+from threading import Thread, Semaphore
+import time
 
 
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
@@ -121,45 +123,93 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             self.send_common_headers(r)
             self.wfile.write(r.content)
             self.wfile.close()
-        except requests.exceptions.RequestException:
+        except RuntimeError:
             self.wfile.close()
 
     def make_range_requests(self, headers, start, target, head_response):
         try:
-            first_request = True
             is_original_range_request = True if 'range' in headers else False
-            while start < target:
-                if start + settings.range_split_size - 1 <= target:
-                    range_bytes = "bytes=%s-%s" % (start, start + settings.range_split_size - 1)
+            headers.pop('if_modified_since', None)
+            range_bytes = "bytes=%s-%s" % (start, start + settings.range_split_size - 1)
+            headers['range'] = range_bytes
+
+            # first request
+            url = self.setup_google_headers(headers)  # reset google app to avoid OverQuotaError
+            r = requests.get(url=url, headers=headers, allow_redirects=False)
+            if r.status_code == 206:
+                if is_original_range_request:
+                    self.send_response(206)
+                    self.pass_headers(r, ignore={'content-range'})
+                    self.send_header('content-range', 'bytes %s-%s/*' % (start, target))
                 else:
-                    range_bytes = "bytes=%s-%s" % (start, target)
+                    self.send_response(200)
+                    self.pass_headers(head_response)
 
-                headers['range'] = range_bytes
-                headers.pop('if_modified_since', None)
+                self.send_header('content-length', target - start + 1)
+                self.end_headers()
+                self.wfile.write(r.content)
+            else:
+                self.send_error(500)
+                self.end_headers()
+                self.wfile.close()
+            start += settings.range_split_size
 
-                for i in range(3):
-                    url = self.setup_google_headers(headers)  # reset google app to avoid OverQuotaError
-                    r = requests.get(url=url, headers=headers, allow_redirects=False)
-                    if r.status_code == 206:
-                        if first_request:
-                            if is_original_range_request:
-                                self.send_response(206)
-                                self.pass_headers(r, ignore={'content-range'})
-                                self.send_header('content-range', 'bytes %s-%s/*' % (start, target))
-                            else:
-                                self.send_response(200)
-                                self.pass_headers(head_response)
-                            self.send_header('content-length', target - start + 1)
-                            self.end_headers()
-                            first_request = False
-                        self.wfile.write(r.content)
-                        break
-
+            # the rest range requests
+            requests_left, size_left = divmod(target - start + 1, settings.range_split_size)
+            total_requests = requests_left if size_left == 0 else requests_left + 1
+            data_splits = [''] * total_requests
+            threads = []
+            semaphore = Semaphore(settings.range_request_threads)
+            for index in range(total_requests):
+                range_bytes = "bytes=%s-%s" % (start, min(start + settings.range_split_size - 1, target))
+                headers_copy = dict(headers)
+                headers_copy['range'] = range_bytes
+                threads.append(Thread(target=self.fetch_range_data, args=(semaphore, headers_copy, data_splits, index)))
                 start += settings.range_split_size
 
+            threads.append(Thread(target=self.write_range_data, args=(data_splits,)))
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+
             self.wfile.close()
-        except requests.exceptions.RequestException:
+        except RuntimeError:
             self.wfile.close()
+
+    def write_range_data(self, data_splits):
+        for index in range(len(data_splits)):
+            while True:
+                content = data_splits[index]
+                if content == '':
+                    time.sleep(0.5)
+                elif content is None:
+                    self.wfile.close()
+                    return
+                else:
+                    self.wfile.write(content)
+                    data_splits[index] = None  # content has been sent, can be garbage collected
+                    break
+
+    def fetch_range_data(self, semaphore, headers, data, index):
+        if self.wfile.closed:
+            data[index] = None
+            return
+
+        semaphore.acquire()
+        for _ in range(3):
+            url = self.setup_google_headers(headers)  # reset google app to avoid OverQuotaError
+            try:
+                r = requests.get(url=url, headers=headers, allow_redirects=False)
+            except RuntimeError:
+                data[index] = None
+                continue
+            if r.status_code == 206:
+                data[index] = r.content
+                break
+            else:
+                data[index] = None
+        semaphore.release()
 
     @staticmethod
     def guess_range_required(headers):
