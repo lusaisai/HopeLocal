@@ -15,6 +15,8 @@ app_https_server_address = ('127.0.0.1', 5300)
 
 timeout = 10
 
+large_file_extensions = ["mp4", "webm", "m4v", "flv", "mp3", "m4a", "ogg",
+                         "exe", "msi", "zip", "rar", "tar.gz"]
 range_required_size = 5 * (2 ** 20)
 range_split_size = 2 ** 20
 range_concurrent_requests = 10

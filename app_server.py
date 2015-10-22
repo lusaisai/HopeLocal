@@ -210,10 +210,8 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def guess_range_required(headers):
-        extensions = ["mp4", "webm", "m4v", "flv", "mp3", "m4a", "ogg", "exe", "zip", "rar", "tar.gz"]
-
         url = headers['target_url']
-        for extension in extensions:
+        for extension in settings.large_file_extensions:
             if url.lower().endswith(extension):
                 return True
 
