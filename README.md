@@ -12,6 +12,8 @@ Here is an overview of the architecture
 #### Prerequisites
 * [Python2.7](https://www.python.org/downloads/)
 
+On Windows, it's better to add **C:\Python27\;C:\Python27\Scripts;** to your PATH environment variable.
+
 #### Steps
 1. Download the repository.
 2. Install python dependencies, run **pip install -r requirements.txt** on command line.
