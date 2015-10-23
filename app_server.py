@@ -1,5 +1,6 @@
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
+import socket
 import requests
 from ca import setup_certs
 import settings
@@ -120,7 +121,7 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             self.send_common_headers(r)
             self.wfile.write(r.content)
             self.wfile.close()
-        except RuntimeError:
+        except requests.exceptions.RequestException, socket.error:
             self.wfile.close()
 
     def make_range_requests(self, headers, start, target, head_response):
@@ -171,41 +172,67 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
                 thread.join()
 
             self.wfile.close()
-        except RuntimeError:
+        except requests.exceptions.RequestException, socket.error:
             self.wfile.close()
 
     def write_range_data(self, data_splits):
         for index in range(len(data_splits)):
             while True:
+                # inspect = []
+                # for item in data_splits:
+                #     if item == '':
+                #         inspect.append(0)
+                #     elif item is None:
+                #         inspect.append(-1)
+                #     else:
+                #         inspect.append(len(item))
+                # sent_count = 0
+                # for item in inspect:
+                #     if item == 4:
+                #         sent_count += 1
+                # print(['sent * %s' % sent_count] + inspect[sent_count:])
+
                 content = data_splits[index]
                 if content == '':
-                    time.sleep(0.5)
-                elif content is None:
-                    self.wfile.close()
-                    return
+                    if None in data_splits:
+                        self.wfile.write('')
+                        self.wfile.close()
+                        return
+                    else:
+                        time.sleep(0.5)
                 else:
-                    self.wfile.write(content)
-                    data_splits[index] = None  # content has been sent, can be garbage collected
-                    break
+                    try:
+                        self.wfile.write(content)
+                        data_splits[index] = 'sent'  # content has been sent, can be garbage collected
+                        break
+                    except socket.error:
+                        self.wfile.close()
+                        return None
 
     def fetch_range_data(self, semaphore, headers, data, index):
+        semaphore.acquire()
         if self.wfile.closed:
             data[index] = None
-            return
+            semaphore.release()
+            return None
 
-        semaphore.acquire()
-        for _ in range(3):
+        for _ in range(5):
             url = self.setup_google_headers(headers)  # reset google app to avoid OverQuotaError
             try:
-                r = requests.get(url=url, headers=headers, allow_redirects=False)
-            except RuntimeError:
-                data[index] = None
+                r = requests.get(url=url, headers=headers, allow_redirects=False, timeout=settings.timeout)
+            except requests.exceptions.RequestException:
+                data[index] = 'retrying'
                 continue
+
             if r.status_code == 206:
                 data[index] = r.content
                 break
             else:
-                data[index] = None
+                data[index] = 'retrying'
+
+        if data[index] == 'retrying':
+            data[index] = None
+
         semaphore.release()
 
     @staticmethod
