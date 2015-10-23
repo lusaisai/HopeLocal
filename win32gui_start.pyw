@@ -45,6 +45,7 @@ class MainWindow:
             pass
 
     def on_restart(self, hwnd, msg, wparam, lparam):
+        reload(start_services)
         self.create_icons()
         self.stop_services()
         self.run_services()

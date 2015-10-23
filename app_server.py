@@ -1,6 +1,7 @@
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 import socket
+import re
 import requests
 from ca import setup_certs
 import settings
@@ -237,9 +238,9 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
 
     @staticmethod
     def guess_range_required(headers):
-        url = headers['target_url']
+        url = re.sub(r'\?.*', '', headers['target_url']).lower()
         for extension in settings.large_file_extensions:
-            if url.lower().endswith(extension):
+            if url.endswith(extension):
                 return True
 
         if 'range' in headers:
