@@ -50,8 +50,8 @@ google_domains = [
 
 # A website may break its session when a new request comes from a different app, this will fix it.
 domain_use_specific_app = {
-    "www.domainx.com": "app_idx",
-    "www.domainy.com": "app_idy"
+    "domainx.com": "app_idx",
+    "domainy.com": "app_idy"
 }
 
 # User settings
