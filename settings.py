@@ -2,7 +2,9 @@ from logging.handlers import RotatingFileHandler
 import os
 import logging
 
-# AKA Project ID
+# AKA Project IDs.
+# A free app has quota limitations such as 22 MB/minute for UrlFetch Data.
+# So, more apps is better than less.
 app_ids = ["app_id1", "app_id2"]
 
 # It's better to be fast and stable, and of course not blocked.
