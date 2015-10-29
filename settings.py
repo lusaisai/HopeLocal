@@ -24,8 +24,8 @@ timeout = (10, 30)
 
 # For now, url extensions is used to detect a potentially large file.
 # If it is large, the file will be downloaded in blocks.
-large_file_extensions = ["mp4", "webm", "m4v", "flv", "mp3", "m4a", "ogg",
-                         "exe", "msi", "zip", "rar", "tar.gz", "pdf"]
+large_file_extensions = ["mp4", "webm", "m4v", "flv", "mp3", "m4a", "ogg", "exe", "msi", "zip", "rar", "tar", "tar.gz",
+                         "jar", "7z", "iso", "pdf"]
 range_required_size = 5 * (2 ** 20)
 range_split_size = 2 ** 20
 range_concurrent_requests = 5
