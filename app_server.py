@@ -8,8 +8,16 @@ import settings
 import random
 from google_connection import setup_google_connection
 from multiprocessing import Process
-from threading import Thread, Semaphore
+from threading import Thread, Semaphore, Lock
 import time
+from enum import Enum
+
+
+class RangeRequestStatus(Enum):
+    ready = 0
+    retrying = 1
+    succeeded = 2
+    failed = 3
 
 
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
@@ -156,17 +164,19 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             # the rest range requests
             requests_left, size_left = divmod(target - start + 1, settings.range_split_size)
             total_requests = requests_left if size_left == 0 else requests_left + 1
-            data_splits = [''] * total_requests
+            data_splits = [RangeRequestStatus.ready] * total_requests
+            data_lock = Lock()
             threads = []
             semaphore = Semaphore(settings.range_concurrent_requests)
             for index in range(total_requests):
                 range_bytes = "bytes=%s-%s" % (start, min(start + settings.range_split_size - 1, target))
                 headers_copy = dict(headers)
                 headers_copy['range'] = range_bytes
-                threads.append(Thread(target=self.fetch_range_data, args=(semaphore, headers_copy, data_splits, index)))
+                threads.append(Thread(target=self.fetch_range_data, args=(semaphore, headers_copy, data_splits,
+                                                                          data_lock, index)))
                 start += settings.range_split_size
 
-            threads.append(Thread(target=self.write_range_data, args=(data_splits,)))
+            threads.append(Thread(target=self.write_range_data, args=(data_splits, data_lock)))
             for thread in threads:
                 thread.start()
             for thread in threads:
@@ -176,27 +186,33 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
         except requests.exceptions.RequestException, socket.error:
             self.wfile.close()
 
-    def write_range_data(self, data_splits):
+    @staticmethod
+    def range_progress_inspect(data_splits):
+        inspect = []
+        for item in data_splits:
+            if isinstance(item, RangeRequestStatus):
+                inspect.append(item.name)
+            else:
+                inspect.append(len(item))
+        sent_count = 0
+        for item in inspect:
+            if item == RangeRequestStatus.succeeded.name:
+                sent_count += 1
+            else:
+                break
+        print(['sent * %s' % sent_count] + inspect[sent_count:])
+
+    def write_range_data(self, data_splits, data_lock):
         for index in range(len(data_splits)):
             while True:
-                # inspect = []
-                # for item in data_splits:
-                #     if item == '':
-                #         inspect.append(0)
-                #     elif item is None:
-                #         inspect.append(-1)
-                #     else:
-                #         inspect.append(len(item))
-                # sent_count = 0
-                # for item in inspect:
-                #     if item == 4:
-                #         sent_count += 1
-                # print(['sent * %s' % sent_count] + inspect[sent_count:])
+                data_lock.acquire()
+
+                # self.range_progress_inspect(data_splits)
 
                 content = data_splits[index]
-                if content == '':
-                    if None in data_splits:
-                        self.wfile.write('')
+                if content is RangeRequestStatus.ready or content is RangeRequestStatus.retrying:
+                    data_lock.release()
+                    if RangeRequestStatus.failed in data_splits:
                         self.wfile.close()
                         return
                     else:
@@ -204,16 +220,22 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
                 else:
                     try:
                         self.wfile.write(content)
-                        data_splits[index] = 'sent'  # content has been sent, can be garbage collected
+                        data_splits[index] = RangeRequestStatus.succeeded
+                        # if index == len(data_splits) - 1:
+                        #     self.range_progress_inspect(data_splits)
+                        data_lock.release()
                         break
                     except socket.error:
+                        data_lock.release()
                         self.wfile.close()
                         return None
 
-    def fetch_range_data(self, semaphore, headers, data, index):
+    def fetch_range_data(self, semaphore, headers, data, data_lock, index):
         semaphore.acquire()
         if self.wfile.closed:
-            data[index] = None
+            data_lock.acquire()
+            data[index] = RangeRequestStatus.failed
+            data_lock.release()
             semaphore.release()
             return None
 
@@ -222,17 +244,24 @@ class HopeAppRequestHandler(BaseHTTPRequestHandler):
             try:
                 r = requests.get(url=url, headers=headers, allow_redirects=False, timeout=settings.timeout)
             except requests.exceptions.RequestException:
-                data[index] = 'retrying'
+                data_lock.acquire()
+                data[index] = RangeRequestStatus.retrying
+                data_lock.release()
                 continue
 
+            data_lock.acquire()
             if r.status_code == 206:
                 data[index] = r.content
+                data_lock.release()
                 break
             else:
-                data[index] = 'retrying'
+                data[index] = RangeRequestStatus.retrying
+                data_lock.release()
 
-        if data[index] == 'retrying':
-            data[index] = None
+        data_lock.acquire()
+        if data[index] is RangeRequestStatus.retrying:
+            data[index] = RangeRequestStatus.failed
+        data_lock.release()
 
         semaphore.release()
 
