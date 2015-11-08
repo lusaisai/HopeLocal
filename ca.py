@@ -4,25 +4,27 @@ import settings
 import time
 
 cert_dir = os.path.join(settings.app_dir, 'certs')
-hope_ca_file = os.path.join(cert_dir, 'hopeca.crt')
+hope_ca_file_path = os.path.join(cert_dir, 'hopeca.crt')
 
 
-def setup_certs(domain=None):
+def setup_certs():
     if not os.path.exists(cert_dir):
         os.mkdir(cert_dir)
 
-    if not os.path.isfile(hope_ca_file):
-        create_hope_ca()
-
-    if domain and not os.path.isfile(get_domain_cert_file(domain)):
-        create_domain_cert(domain)
+    if not os.path.isfile(hope_ca_file_path):
+        create_hope_ca_file()
 
 
-def get_domain_cert_file(domain):
+def setup_domain_cert(domain):
+    if not os.path.isfile(get_domain_cert_file_path(domain)):
+        create_domain_cert_file(domain)
+
+
+def get_domain_cert_file_path(domain):
     return os.path.join(cert_dir, domain+'.crt')
 
 
-def create_hope_ca():
+def create_hope_ca_file():
         key = OpenSSL.crypto.PKey()
         key.generate_key(OpenSSL.crypto.TYPE_RSA, 2048)
         req = OpenSSL.crypto.X509Req()
@@ -43,16 +45,16 @@ def create_hope_ca():
         ca.set_subject(req.get_subject())
         ca.set_pubkey(req.get_pubkey())
         ca.sign(key, 'sha256')
-        with open(hope_ca_file, 'wb') as fp:
+        with open(hope_ca_file_path, 'wb') as fp:
             fp.write(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, ca))
             fp.write(OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, key))
 
 
-def create_domain_cert(domain=None):
+def create_domain_cert_file(domain=None):
     if not domain:
         return
 
-    with open(hope_ca_file, 'rb') as fp:
+    with open(hope_ca_file_path, 'rb') as fp:
         content = fp.read()
         key = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM, content)
         ca = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, content)
@@ -82,10 +84,11 @@ def create_domain_cert(domain=None):
     cert.set_pubkey(req.get_pubkey())
     cert.sign(key, 'sha256')
 
-    with open(get_domain_cert_file(domain), 'wb') as fp:
+    with open(get_domain_cert_file_path(domain), 'wb') as fp:
         fp.write(OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, cert))
         fp.write(OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, pkey))
 
 
 if __name__ == '__main__':
-    setup_certs("www.google.com.hk")
+    setup_certs()
+    setup_domain_cert("www.google.com.hk")

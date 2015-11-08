@@ -4,7 +4,7 @@ import SocketServer
 import settings
 import os
 from front_server import HopeTunnel
-from ca import setup_certs, cert_dir
+from ca import setup_domain_cert, cert_dir
 
 
 class HopeHttpsRequestHandler(SocketServer.BaseRequestHandler):
@@ -12,7 +12,7 @@ class HopeHttpsRequestHandler(SocketServer.BaseRequestHandler):
         length = int(self.request.recv(4))
         domain = self.request.recv(length)
         cert_file = os.path.join(cert_dir, domain+'.crt')
-        setup_certs(domain)
+        setup_domain_cert(domain)
         ssl_request = ssl.wrap_socket(self.request, certfile=cert_file, keyfile=cert_file, server_side=True)
         s = socket.socket()
         s.connect(settings.app_https_server_address)
