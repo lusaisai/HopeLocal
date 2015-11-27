@@ -60,3 +60,6 @@ docs/_build/
 target/
 
 # Created by .ignore support plugin (hsz.mobi)
+.idea/
+certs/
+user_settings.py
