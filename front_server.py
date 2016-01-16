@@ -1,8 +1,8 @@
 import socket
-import threading
 import SocketServer
 import settings
 import re
+from tunnel import Tunnel
 
 
 class HopeRequestHandler(SocketServer.BaseRequestHandler):
@@ -31,7 +31,7 @@ class HopeRequestHandler(SocketServer.BaseRequestHandler):
             s.connect(settings.app_http_server_address)
             s.sendall(data)
 
-        HopeTunnel.tunnelling(self.request, s)
+        Tunnel.tunnelling(self.request, s)
 
     @staticmethod
     def is_google_domain(domain):
@@ -40,44 +40,6 @@ class HopeRequestHandler(SocketServer.BaseRequestHandler):
                 return True
 
         return False
-
-
-class HopeTunnel(threading.Thread):
-    def __init__(self, incoming, outgoing):
-        super(HopeTunnel, self).__init__()
-        self.incoming = incoming
-        self.outgoing = outgoing
-        self.logger = settings.logger
-
-    def run(self):
-        while True:
-            try:
-                data = self.incoming.recv(4096)
-                if len(data) == 0:
-                    self.close()
-                    break
-                else:
-                    self.outgoing.sendall(data)
-                    # self.logger.info("%s:%s --> %s: %s" % (threading.currentThread().getName(),
-                    # self.incoming.getsockname(), self.outgoing.getsockname(), data))
-            except socket.error as err:
-                # self.logger.info("%s:%s --> %s: %s" % (threading.currentThread().getName(),
-                # self.incoming.getsockname(), self.outgoing.getsockname(), err))
-                self.close()
-                break
-
-    def close(self):
-        self.incoming.close()
-        self.outgoing.close()
-
-    @classmethod
-    def tunnelling(cls, s1, s2):
-        t1 = cls(s1, s2)
-        t1.start()
-        t2 = cls(s2, s1)
-        t2.start()
-        t1.join()
-        t2.join()
 
 
 if __name__ == '__main__':

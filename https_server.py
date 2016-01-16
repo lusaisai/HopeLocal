@@ -2,7 +2,7 @@ import socket
 import ssl
 import SocketServer
 import settings
-from front_server import HopeTunnel
+from tunnel import Tunnel
 from ca import setup_domain_cert, get_domain_cert_file_path
 
 
@@ -15,7 +15,7 @@ class HopeHttpsRequestHandler(SocketServer.BaseRequestHandler):
                                       keyfile=get_domain_cert_file_path(domain), server_side=True)
         s = socket.socket()
         s.connect(settings.app_https_server_address)
-        HopeTunnel.tunnelling(ssl_request, s)
+        Tunnel.tunnelling(ssl_request, s)
 
 
 if __name__ == '__main__':

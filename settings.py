@@ -22,6 +22,9 @@ app_https_server_address = ('127.0.0.1', 5300)
 # (connect timeout, read timeout)
 timeout = (10, 30)
 
+# Tunnel timeout
+tunnel_timeout = 60
+
 # For now, url extensions is used to detect a potentially large file.
 # If it is large, the file will be downloaded in blocks.
 large_file_extensions = ["mp4", "webm", "m4v", "flv", "mp3", "m4a", "ogg", "exe", "msi", "zip", "rar", "tar", "tar.gz",
