@@ -3,8 +3,9 @@ from https_server import HopeHttpsRequestHandler
 from app_server import ThreadingHTTPServer, HopeAppHttpRequestHandler, HopeAppHttpsRequestHandler
 import settings
 import SocketServer
-from multiprocessing import Process
+from threading import Thread
 from ca import setup_certs
+from ip_pool import MaintainIPPool
 
 
 def run_front_server():
@@ -27,19 +28,24 @@ def run_app_https_server():
     server.serve_forever()
 
 
+def maintain_ip_pool():
+    MaintainIPPool().run()
+
+
 def run_services():
     setup_certs()
-    processes = [
-        Process(target=run_front_server),
-        Process(target=run_https_server),
-        Process(target=run_app_http_server),
-        Process(target=run_app_https_server)
+    threads = [
+        Thread(target=run_front_server),
+        Thread(target=run_https_server),
+        Thread(target=run_app_http_server),
+        Thread(target=run_app_https_server),
+        Thread(target=maintain_ip_pool)
     ]
 
-    for process in processes:
-        process.start()
+    for thread in threads:
+        thread.start()
 
-    return processes
+    return threads
 
 if __name__ == '__main__':
     run_services()

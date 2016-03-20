@@ -1,6 +1,6 @@
 import socket
 from requests.packages.urllib3.util import connection
-from settings import google_ip
+import ip_pool
 
 
 def create_google_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
@@ -13,7 +13,7 @@ def create_google_connection(address, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
             sock.settimeout(timeout)
         if source_address:
             sock.bind(source_address)
-        sock.connect((google_ip, 443))
+        sock.connect((ip_pool.google_ips_heap[0][1], 443))
 
         return sock
     except socket.error as err:

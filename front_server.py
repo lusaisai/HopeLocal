@@ -3,6 +3,7 @@ import SocketServer
 import settings
 import re
 from tunnel import Tunnel
+import ip_pool
 
 
 class HopeRequestHandler(SocketServer.BaseRequestHandler):
@@ -22,7 +23,7 @@ class HopeRequestHandler(SocketServer.BaseRequestHandler):
             self.request.send('\r\n')
             s = socket.socket()
             if self.is_google_domain(domain):
-                s.connect((settings.google_ip, 443))
+                s.connect((ip_pool.google_ips_heap[0][1], 443))
             else:
                 s.connect(settings.https_server_address)
                 s.sendall("%s%s" % (str(len(domain)).zfill(4), domain))

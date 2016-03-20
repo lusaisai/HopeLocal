@@ -7,8 +7,8 @@ import logging
 # So, more apps is better than less.
 app_ids = ["app_id1", "app_id2"]
 
-# It's better to be fast and stable, and of course not blocked.
-google_ip = "59.18.45.59"
+# It's better for them to be fast and stable, and of course not blocked.
+google_ips = "210.92.119.20|210.92.119.29"
 
 # For development
 using_dev_app_engine = False
