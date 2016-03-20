@@ -37,6 +37,7 @@ class MaintainIPPool:
         threads = [CheckTime(ip, google_ips_with_time) for ip in google_ips]
         for thread in threads:
             thread.start()
+            time.sleep(0.1)  # Slowly starts the threads
 
         for thread in threads:
             thread.join()
