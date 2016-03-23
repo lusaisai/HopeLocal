@@ -45,7 +45,8 @@ def run_services():
     for thread in threads:
         thread.start()
 
-    return threads
+    for thread in threads:
+        thread.join()
 
 if __name__ == '__main__':
     run_services()

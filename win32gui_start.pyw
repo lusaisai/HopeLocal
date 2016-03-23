@@ -4,6 +4,7 @@ import win32con
 import os
 import start_services
 import settings
+from multiprocessing import Process
 
 
 class MainWindow:
@@ -30,7 +31,7 @@ class MainWindow:
                                           win32con.CW_USEDEFAULT, 0, 0, h_inst, None)
         win32gui.UpdateWindow(self.hwnd)
         self.create_icons()
-        self.processes = []
+        self.process = None
 
     def create_icons(self):
         h_inst = win32api.GetModuleHandle(None)
@@ -41,7 +42,7 @@ class MainWindow:
         nid = (self.hwnd, 0, flags, win32con.WM_USER+20, hicon, "Hope")
         try:
             win32gui.Shell_NotifyIcon(win32gui.NIM_ADD, nid)
-        except win32gui.error:
+        except RuntimeError:
             pass
 
     def on_restart(self, hwnd, msg, wparam, lparam):
@@ -66,12 +67,13 @@ class MainWindow:
             win32gui.PostMessage(self.hwnd, win32con.WM_NULL, 0, 0)
 
     def run_services(self):
-        self.processes = start_services.run_services()
+        self.process = Process(target=start_services.run_services)
+        self.process.start()
 
     def stop_services(self):
-        for process in self.processes:
-            process.terminate()
-        self.processes = []
+        if self.process:
+            self.process.terminate()
+            self.process = None
 
     def on_command(self, hwnd, msg, wparam, lparam):
         item_id = win32api.LOWORD(wparam)
