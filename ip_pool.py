@@ -1,4 +1,4 @@
-from settings import google_ips
+from settings import google_ips, ip_check_interval
 import threading
 import time
 import socket
@@ -29,7 +29,7 @@ class CheckTime(threading.Thread):
 
 class MaintainIPPool:
     def __init__(self):
-        self.sleep_time = 60
+        pass
 
     @staticmethod
     def build_heap():
@@ -49,4 +49,4 @@ class MaintainIPPool:
     def run(self):
         while True:
             self.build_heap()
-            time.sleep(self.sleep_time)
+            time.sleep(ip_check_interval)
