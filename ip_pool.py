@@ -42,9 +42,10 @@ class MaintainIPPool:
         for thread in threads:
             thread.join()
 
-        heapq.heapify(google_ips_with_time)
-        global google_ips_heap
-        google_ips_heap = google_ips_with_time
+        if google_ips_with_time:
+            heapq.heapify(google_ips_with_time)
+            global google_ips_heap
+            google_ips_heap = google_ips_with_time
 
     def run(self):
         while True:
