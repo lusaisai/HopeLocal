@@ -16,9 +16,6 @@ class Window(QMainWindow):
         self.create_actions()
         self.create_tray_icon()
         self.run_services()
-        self.status_thread = Thread(target=self.status_update)
-        self.status_thread.daemon = True
-        self.status_thread.start()
 
     def create_main_window(self):
         self.icon = QIcon(os.path.join(settings.app_dir, 'docs', 'hope.ico'))
@@ -84,11 +81,6 @@ class Window(QMainWindow):
         self.stop_services()
         sys.exit()
 
-    def status_update(self):
-        while True:
-            time.sleep(settings.ip_check_interval)
-            rtt, ip = ip_pool.google_ips_heap[0]
-            self.statusBar().showMessage("Google IP: %s. RTT: %s." % (ip, rtt))
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
