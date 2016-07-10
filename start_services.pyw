@@ -6,6 +6,7 @@ import SocketServer
 from threading import Thread
 from ca import setup_certs
 from ip_pool import MaintainIPPool
+from info_server import InfoTCPHandler
 
 
 def run_front_server():
@@ -32,6 +33,11 @@ def maintain_ip_pool():
     MaintainIPPool().run()
 
 
+def run_info_server():
+    server = SocketServer.ThreadingTCPServer(settings.info_server_address, InfoTCPHandler)
+    server.serve_forever()
+
+
 def run_services():
     setup_certs()
     threads = [
@@ -39,7 +45,8 @@ def run_services():
         Thread(target=run_https_server),
         Thread(target=run_app_http_server),
         Thread(target=run_app_https_server),
-        Thread(target=maintain_ip_pool)
+        Thread(target=maintain_ip_pool),
+        Thread(target=run_info_server)
     ]
 
     for thread in threads:

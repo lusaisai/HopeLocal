@@ -1,5 +1,6 @@
 import sys
 import time
+from socket import socket
 from threading import Thread
 from PyQt4.QtGui import *
 import start_services
@@ -16,6 +17,7 @@ class Window(QMainWindow):
         self.create_actions()
         self.create_tray_icon()
         self.run_services()
+        self.run_update_status_thread()
 
     def create_main_window(self):
         self.icon = QIcon(os.path.join(settings.app_dir, 'docs', 'hope.ico'))
@@ -76,6 +78,21 @@ class Window(QMainWindow):
         if self.process:
             self.process.terminate()
             self.process = None
+
+    def update_status(self):
+        time.sleep(60)
+        s = socket()
+        s.connect(settings.info_server_address)
+        while True:
+            s.sendall('info')
+            data = s.recv(4096)
+            self.statusBar().showMessage(data)
+            time.sleep(settings.ip_check_interval)
+
+    def run_update_status_thread(self):
+        t = Thread(target=self.update_status)
+        t.setDaemon(True)
+        t.start()
 
     def close(self):
         self.stop_services()
