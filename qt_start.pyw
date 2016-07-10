@@ -7,7 +7,6 @@ import start_services
 import settings
 import os.path
 from multiprocessing import Process
-import ip_pool
 
 
 class Window(QMainWindow):
@@ -54,6 +53,8 @@ class Window(QMainWindow):
 
         self.tray_icon.setIcon(self.icon)
         self.tray_icon.activated.connect(self.tray_activated)
+
+        self.tray_icon.setToolTip("Hope")
 
         self.tray_icon.show()
 
