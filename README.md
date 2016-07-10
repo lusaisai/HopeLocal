@@ -42,5 +42,13 @@ About https, Hope will create a file **certs/hopeca.crt**, install(import) it to
 1. Install windows api dependency, run **pip install pypiwin32** on command line.
 2. Double click **win32gui_start.pyw** to start the services. A tray icon will be created where you can restart/exit.
 
+### Windows and Linux
+#### Steps
+1. Install PyQT 4
+   * Windows: https://www.riverbankcomputing.com/software/pyqt/download
+   * Linux(Ubuntu): sudo apt-get install python-qt4
+2. Run **qt_start.pyw** to start the services.
+
+
 ## Tips
 1. For Youtube, you'll have a better user experience if you select the video quality directly rather than letting youtube change it automatically.
