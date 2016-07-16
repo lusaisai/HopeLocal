@@ -40,6 +40,7 @@ class Window(QMainWindow):
         self.run_services()
         self.restart_btn.setEnabled(True)
         self.statusBar().showMessage("Services restarted")
+        self.run_update_status_thread()
 
     def create_actions(self):
         self.quit_action = QAction("&Quit", self, triggered=self.close)
